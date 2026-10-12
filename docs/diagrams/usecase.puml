@@ -1,0 +1,56 @@
+
+@startuml
+title Use Case диаграмма: "Учёт расходов семейного бюджета"
+
+left to right direction
+
+actor "Пользователь" as User
+actor "Администратор" as Admin
+
+rectangle " " {
+
+    ' Варианты использования пользователя
+    usecase "Зарегистрироваться" as UserRegister
+    usecase "Войти" as UserLogin
+    usecase "Добавить расходы" as AddExpense
+    usecase "Редактировать расходы" as EditExpense
+    usecase "Удалить расходы" as DeleteExpense
+    usecase "Посмотреть расходы" as ViewExpense
+    usecase "Поиск и фильтрация\nрасходов" as SearchExpense
+    usecase "Посмотреть статистику\nрасходов" as UserStatistics
+    usecase "Формирование отчёта" as UserReport
+
+    ' Варианты использования администратора
+    usecase "Зарегистрироваться" as AdminRegister
+    usecase "Войти" as AdminLogin
+    usecase "Удалить расходы" as AdminDeleteExpense
+    usecase "Посмотреть расходы" as AdminViewExpense
+    usecase "Посмотреть статистику\nрасходов" as AdminStatistics
+    usecase "Управлять категориями\nрасходов" as ManageCategories
+    usecase "Управление членами семьи" as ManageFamily
+    usecase "Формирование отчёта" as AdminReport
+
+    ' Связи пользователя
+    User -- UserRegister
+    User -- UserLogin
+
+    UserLogin -- AddExpense
+    UserLogin -- EditExpense
+    UserLogin -- DeleteExpense
+    UserLogin -- ViewExpense
+    UserLogin -- SearchExpense
+    UserLogin -- UserStatistics
+    UserLogin -- UserReport
+
+    ' Связи администратора
+    Admin -- AdminRegister
+    Admin -- AdminLogin
+
+    AdminLogin -- AdminDeleteExpense
+    AdminLogin -- AdminViewExpense
+    AdminLogin -- AdminStatistics
+    AdminLogin -- ManageCategories
+    AdminLogin -- ManageFamily
+    AdminLogin -- AdminReport
+}
+@enduml
