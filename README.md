@@ -52,9 +52,13 @@ FamilyBudget/
 │   └── FamilyBudget.iml
 │
 ├── docs/
-│   └── diagrams/
-│       └── usecase.puml
-│
+│   ├── diagrams/
+│   │   └── usecase.puml
+│   └── flowcharts/
+│       ├── add_expense.png
+│       ├── analysis.png
+│       ├── authentication.png
+│       └── edit_delete.png
 ├── main.py
 └── README.md
 Python
