@@ -1,0 +1,51 @@
+
+@startuml
+title Family Budget Database
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 0
+
+skinparam entity {
+    BackgroundColor #F2F2F2
+    BorderColor #888888
+    FontColor #111111
+    AttributeFontColor #111111
+}
+
+skinparam ArrowColor #444444
+skinparam ArrowThickness 1
+
+entity "Users" as Users {
+    * user_id : INTEGER <<PK>>
+    --
+    username : TEXT <<UNIQUE>>
+    password_hash : TEXT
+    full_name : TEXT
+    family_role : TEXT
+}
+
+entity "Categories" as Categories {
+    * category_id : INTEGER <<PK>>
+    --
+    category_name : TEXT
+    description : TEXT
+}
+
+entity "Expenses" as Expenses {
+    * expense_id : INTEGER <<PK>>
+    --
+    user_id : INTEGER <<FK>>
+    category_id : INTEGER <<FK>>
+    full_name : TEXT
+    family_role : TEXT
+    amount : REAL
+    expense_date : TEXT
+    description : TEXT
+}
+
+Users ||--o{ Expenses
+Categories ||--o{ Expenses
+
+@enduml
