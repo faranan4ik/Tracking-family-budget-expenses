@@ -1,48 +1,38 @@
 
 @startuml
-title Family Budget Database
-
-top to bottom direction
+!theme plain
+hide circle
 skinparam linetype ortho
 skinparam shadowing false
-skinparam roundcorner 0
 
-skinparam entity {
-    BackgroundColor #F2F2F2
-    BorderColor #888888
-    FontColor #111111
-    AttributeFontColor #111111
-}
-
-skinparam ArrowColor #444444
-skinparam ArrowThickness 1
+title ER-диаграмма — FamilyBudget
 
 entity "Users" as Users {
     * user_id : INTEGER <<PK>>
     --
-    username : TEXT <<UNIQUE>>
-    password_hash : TEXT
-    full_name : TEXT
-    family_role : TEXT
+    username : TEXT <<UNIQUE, NOT NULL>>
+    password_hash : TEXT <<NOT NULL>>
+    last_name : TEXT <<NOT NULL>>
+    first_name : TEXT <<NOT NULL>>
+    middle_name : TEXT <<NOT NULL>>
+    family_role : TEXT <<NOT NULL>>
+    role : TEXT <<NOT NULL>>
 }
 
 entity "Categories" as Categories {
     * category_id : INTEGER <<PK>>
     --
-    category_name : TEXT
+    category_name : TEXT <<UNIQUE, NOT NULL>>
     description : TEXT
 }
 
 entity "Expenses" as Expenses {
     * expense_id : INTEGER <<PK>>
     --
-    user_id : INTEGER <<FK>>
-    category_id : INTEGER <<FK>>
-    full_name : TEXT
-    family_role : TEXT
-    amount : REAL
-    expense_date : TEXT
-    description : TEXT
+    user_id : INTEGER <<FK, NOT NULL>>
+    category_id : INTEGER <<FK, NOT NULL>>
+    amount : REAL <<NOT NULL, CHECK > 0>>
+    expense_date : TEXT <<NOT NULL>>
 }
 
 Users ||--o{ Expenses
