@@ -84,7 +84,7 @@ def check_expense_owner(expense, current_user):
 # Создание первого администратора
 def create_initial_admin():
     print("\n=================================")
-    print("ПЕРВОНАЧАЛЬНАЯ НАСТРОЙКА СИСТЕМЫ")
+    print("Первоначальная настройка системы")
     print("=================================\n")
     print("Пользователи отсутствуют.")
     print("Необходимо создать администратора.\n")
@@ -125,9 +125,9 @@ def create_initial_admin():
 
 # Регистрация обычного пользователя
 def register_user():
-    print("\n=========================")
-    print("РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ")
-    print("=========================\n")
+    print("\n===============================")
+    print("Регистрация нового пользователя")
+    print("===============================\n")
 
     username = input("Логин: ").strip()
     password = input("Пароль: ")
@@ -160,7 +160,7 @@ def register_user():
 # Авторизация
 def login():
     print("\n===========")
-    print("АВТОРИЗАЦИЯ")
+    print("Авторизация")
     print("===========\n")
 
     username = input("Логин: ").strip()
@@ -192,7 +192,7 @@ def show_users():
         print("\nОшибка: Пользователи отсутствуют.")
         return
     print("\n====================")
-    print("СПИСОК ПОЛЬЗОВАТЕЛЕЙ")
+    print("Список пользователей")
     print("====================\n")
 
     for user in users:
@@ -210,7 +210,7 @@ def user_menu():
     while True:
         print("""
 =================================
-          ПОЛЬЗОВАТЕЛИ
+          Пользователи
 =================================
 1. Просмотреть пользователей
 2. Зарегистрировать пользователя
@@ -252,7 +252,7 @@ def show_expenses(expenses=None):
         return
 
     print("\n===============")
-    print("СПИСОК РАСХОДОВ")
+    print("Список расходов")
     print("===============\n")
 
     for expense in expenses:
@@ -286,7 +286,7 @@ def get_accessible_expense(expense_id, current_user):
 # Добавление расхода
 def add_expense(current_user):
     print("\n==================")
-    print("ДОБАВЛЕНИЕ РАСХОДА")
+    print("Добавление расхода")
     print("==================\n")
 
     if current_user.role == "admin":
@@ -323,7 +323,7 @@ def add_expense(current_user):
 # Изменение расхода
 def edit_expense(current_user):
     print("\n==================")
-    print("ИЗМЕНЕНИЕ РАСХОДА")
+    print("Изменение расхода")
     print("==================\n")
 
     if current_user.role == "admin":
@@ -398,7 +398,7 @@ def edit_expense(current_user):
 # Удаление расхода
 def delete_expense(current_user):
     print("\n=================")
-    print("УДАЛЕНИЕ РАСХОДА")
+    print("Удаление расхода")
     print("=================\n")
 
     if current_user.role == "admin":
@@ -428,7 +428,7 @@ def expense_menu(current_user):
     while True:
         print("""
 =======================
-        РАСХОДЫ
+        Расходы
 =======================
 1. Просмотреть расходы
 2. Добавить расход
@@ -499,7 +499,7 @@ def show_categories():
         print("\nОшибка: Категории отсутствуют.")
         return
     print("\n================")
-    print("СПИСОК КАТЕГОРИЙ")
+    print("Список категорий")
     print("================\n")
 
 
@@ -514,7 +514,7 @@ def show_categories():
 # Добавление категории
 def add_category():
     print("\n====================")
-    print("ДОБАВЛЕНИЕ КАТЕГОРИИ") 
+    print("Добавление категории") 
     print("====================\n")
 
     name = input("Введите название категории: ").strip()
@@ -534,7 +534,7 @@ def add_category():
 # Изменение категории
 def edit_category():
     print("\n===================")
-    print("ИЗМЕНЕНИЕ КАТЕГОРИИ")
+    print("Изменение категории")
     print("===================\n")
 
     show_categories()
@@ -564,7 +564,7 @@ def edit_category():
 # Удаление категории
 def delete_category():
     print("\n==================")
-    print("УДАЛЕНИЕ КАТЕГОРИИ")
+    print("Удаление категории")
     print("==================\n")
 
     show_categories()
@@ -589,7 +589,7 @@ def category_menu():
     while True:
         print("""
 =========================
-        КАТЕГОРИИ
+        Категории
 =========================
 1. Просмотреть категории
 2. Добавить категорию
@@ -633,7 +633,7 @@ def admin_menu(current_user):
     while True:
         print(f"""
 =============================
-     МЕНЮ АДМИНИСТРАТОРА
+     Меню администратора
 =============================
 ID: {current_user.user_id}
 Пользователь: {current_user.username}
@@ -709,7 +709,7 @@ def regular_user_menu(current_user):
     while True:
         print(f"""
 ===============================
-       МЕНЮ ПОЛЬЗОВАТЕЛЯ
+       Меню пользователя
 ===============================
 ID: {current_user.user_id}
 Пользователь: {current_user.username}
