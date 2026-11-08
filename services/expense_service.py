@@ -5,8 +5,8 @@ from math import isfinite
 
 from models import Expense
 from repositories import ExpenseRepository
-from user_service import UserService
-from category_service import CategoryService
+from services.user_service import UserService
+from services.category_service import CategoryService
 from exceptions import ServiceError
 
 

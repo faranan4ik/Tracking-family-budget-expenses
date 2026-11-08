@@ -1,13 +1,14 @@
 
-from datetime import date
+from datetime import date, datetime
 
 from database import prepare_database
 from models import Category, Expense
-from user_service import UserService
-from category_service import CategoryService
-from expense_service import ExpenseService
+from services.user_service import UserService
+from services.category_service import CategoryService
+from services.expense_service import ExpenseService
+from services.auth_service import AuthService
 from exceptions import ServiceError
-from datetime import date, datetime
+
 
 # Подготовка базы данных
 prepare_database()
@@ -16,7 +17,12 @@ prepare_database()
 user_service = UserService()
 category_service = CategoryService()
 expense_service = ExpenseService()
+auth_service = AuthService()
 
+
+# ==========================================
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+# ==========================================
 
 # Ввод целого числа
 def input_int(message):
@@ -24,23 +30,24 @@ def input_int(message):
         try:
             return int(input(message))
         except ValueError:
-            print("Ошибка: необходимо ввести целое число.")
+            print("\nОшибка: необходимо ввести целое число.")
 
 
-# Ввод положительного числа
+# Ввод положительной суммы
 def input_amount(message):
     while True:
         try:
             amount = float(input(message).replace(",", "."))
 
             if amount <= 0:
-                print("Сумма должна быть больше нуля.")
+                print("\nОшибка: сумма должна быть больше нуля.")
                 continue
 
             return amount
 
         except ValueError:
-            print("Ошибка: необходимо ввести число.")
+            print("\nОшибка: необходимо ввести число.")
+
 
 # Ввод и проверка даты
 def input_date(message):
@@ -61,46 +68,179 @@ def input_date(message):
             return expense_date
 
         except ValueError:
-            print("Ошибка: неверная дата. Используйте формат ГГГГ-ММ-ДД.")
+            print("\nОшибка: неверная дата. Используйте формат ГГГГ-ММ-ДД.")
 
 
+# Проверка принадлежности расхода пользователю
+def check_expense_owner(expense, current_user):
+    if expense.user_id != current_user.user_id:
+        raise ServiceError("\nОшибка: У вас нет доступа к этому расходу.")
+
+
+# ==========================================
+# РЕГИСТРАЦИЯ И АВТОРИЗАЦИЯ
+# ==========================================
+
+# Создание первого администратора
+def create_initial_admin():
+    print("\n=================================")
+    print("ПЕРВОНАЧАЛЬНАЯ НАСТРОЙКА СИСТЕМЫ")
+    print("=================================\n")
+    print("Пользователи отсутствуют.")
+    print("Необходимо создать администратора.\n")
+
+    while True:
+        try:
+            username = input("Придумайте логин: ").strip()
+            password = input("Придумайте пароль: ")
+            password_repeat = input("Повторите пароль: ")
+
+            if password != password_repeat:
+                print("\nОшибка: пароли не совпадают.")
+                continue
+
+            last_name = input("Фамилия: ").strip()
+            first_name = input("Имя: ").strip()
+            middle_name = input("Отчество: ").strip()
+            family_role = input("Роль в семье: ").strip()
+
+            user = auth_service.create_initial_admin(
+                username=username,
+                password=password,
+                last_name=last_name,
+                first_name=first_name,
+                middle_name=middle_name,
+                family_role=family_role
+            )
+
+            print("\nАдминистратор успешно создан.")
+            print(f"Логин: {user.username}")
+            print("Теперь войдите в систему.")
+
+            break
+
+        except ServiceError as error:
+            print(f"\nОшибка: {error}")
+
+
+# Регистрация обычного пользователя
+def register_user():
+    print("\n=========================")
+    print("РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ")
+    print("=========================\n")
+
+    username = input("Логин: ").strip()
+    password = input("Пароль: ")
+    password_repeat = input("Повторите пароль: ")
+
+    if password != password_repeat:
+        raise ServiceError("\nОшибка: пароли не совпадают.")
+
+    last_name = input("Фамилия: ").strip()
+    first_name = input("Имя: ").strip()
+    middle_name = input("Отчество: ").strip()
+    family_role = input("Роль в семье: ").strip()
+
+    user = auth_service.register(
+        username=username,
+        password=password,
+        last_name=last_name,
+        first_name=first_name,
+        middle_name=middle_name,
+        family_role=family_role
+    )
+
+    print("\nПользователь успешно зарегистрирован.\n")
+    print(f"ID: {user.user_id}")
+    print(f"Логин: {user.username}")
+    print(f"ФИО: {user.last_name} {user.first_name} {user.middle_name}")
+    print("Системная роль: user")
+
+
+# Авторизация
+def login():
+    print("\n===========")
+    print("АВТОРИЗАЦИЯ")
+    print("===========\n")
+
+    username = input("Логин: ").strip()
+    password = input("Пароль: ")
+
+    user = auth_service.authenticate(username, password)
+
+    if user is None:
+        print("\nОшибка: неверный логин или пароль.")
+        return None
+
+    print(
+        f"\nДобро пожаловать, "
+        f"{user.first_name} {user.middle_name}!"
+    )
+
+    return user
+
+
+# ==========================================
+# ПОЛЬЗОВАТЕЛИ
+# ==========================================
 
 # Вывод списка пользователей
 def show_users():
     users = user_service.get_all_users()
 
     if not users:
-        print("\nПользователи отсутствуют.")
+        print("\nОшибка: Пользователи отсутствуют.")
         return
-
-    print("\n--- СПИСОК ПОЛЬЗОВАТЕЛЕЙ ---")
+    print("\n====================")
+    print("СПИСОК ПОЛЬЗОВАТЕЛЕЙ")
+    print("====================\n")
 
     for user in users:
         print(
-            f"ID: {user.user_id} | "
-            f"{user.last_name} {user.first_name} {user.middle_name} | "
-            f"Семейная роль: {user.family_role} | "
-            f"Логин: {user.username}"
+            f"\nID: {user.user_id}\n"
+            f"ФИО: {user.last_name} {user.first_name} {user.middle_name}\n"
+            f"Семейная роль: {user.family_role}\n"
+            f"Логин: {user.username}\n"
+            f"Системная роль: {user.role}"
         )
 
 
-# Вывод списка категорий
-def show_categories():
-    categories = category_service.get_all_categories()
+# Меню пользователей
+def user_menu():
+    while True:
+        print("""
+=================================
+          ПОЛЬЗОВАТЕЛИ
+=================================
+1. Просмотреть пользователей
+2. Зарегистрировать пользователя
 
-    if not categories:
-        print("\nКатегории отсутствуют.")
-        return
+0. Назад
+=================================
+        """)
 
-    print("\n--- СПИСОК КАТЕГОРИЙ ---")
+        choice = input("Выберите действие: ").strip()
 
-    for category in categories:
-        print(
-            f"ID: {category.category_id} | "
-            f"{category.category_name} | "
-            f"{category.description or 'Описание отсутствует'}"
-        )
+        try:
+            if choice == "1":
+                show_users()
 
+            elif choice == "2":
+                register_user()
+
+            elif choice == "0":
+                break
+
+            else:
+                print("\nОшибка: Неизвестная команда.")
+
+        except (ServiceError, ValueError) as error:
+            print(f"\nОшибка: {error}")
+
+
+# ==========================================
+# РАСХОДЫ
+# ==========================================
 
 # Вывод списка расходов
 def show_expenses(expenses=None):
@@ -108,10 +248,12 @@ def show_expenses(expenses=None):
         expenses = expense_service.get_all_expenses()
 
     if not expenses:
-        print("\nРасходы отсутствуют.")
+        print("\nОшибка: Расходы отсутствуют.")
         return
 
-    print("\n--- СПИСОК РАСХОДОВ ---")
+    print("\n===============")
+    print("СПИСОК РАСХОДОВ")
+    print("===============\n")
 
     for expense in expenses:
         user = user_service.get_user(expense.user_id)
@@ -131,12 +273,27 @@ def show_expenses(expenses=None):
         )
 
 
-# Добавление расхода
-def add_expense():
-    print("\n--- ДОБАВЛЕНИЕ РАСХОДА ---")
+# Получение доступных пользователю расходов
+def get_accessible_expense(expense_id, current_user):
+    expense = expense_service.get_expense(expense_id)
 
-    show_users()
-    user_id = input_int("\nВведите ID пользователя: ")
+    if current_user.role != "admin":
+        check_expense_owner(expense, current_user)
+
+    return expense
+
+
+# Добавление расхода
+def add_expense(current_user):
+    print("\n==================")
+    print("ДОБАВЛЕНИЕ РАСХОДА")
+    print("==================\n")
+
+    if current_user.role == "admin":
+        show_users()
+        user_id = input_int("\nВведите ID пользователя: ")
+    else:
+        user_id = current_user.user_id
 
     show_categories()
     category_id = input_int("\nВведите ID категории: ")
@@ -144,7 +301,7 @@ def add_expense():
     amount = input_amount("Введите сумму расхода: ")
 
     expense_date = input_date(
-    "Введите дату (ГГГГ-ММ-ДД) или нажмите Enter для текущей даты: "
+        "Введите дату (ГГГГ-ММ-ДД) или Enter для текущей даты: "
     )
 
     if not expense_date:
@@ -164,18 +321,23 @@ def add_expense():
 
 
 # Изменение расхода
+def edit_expense(current_user):
+    print("\n==================")
+    print("ИЗМЕНЕНИЕ РАСХОДА")
+    print("==================\n")
 
-# Изменение расхода
-def edit_expense():
-    print("\n--- ИЗМЕНЕНИЕ РАСХОДА ---")
-
-    show_expenses()
+    if current_user.role == "admin":
+        show_expenses()
+    else:
+        show_expenses(
+            expense_service.get_user_expenses(current_user.user_id)
+        )
 
     expense_id = input_int("\nВведите ID расхода: ")
-    expense = expense_service.get_expense(expense_id)
+    expense = get_accessible_expense(expense_id, current_user)
 
     print("\nВведите новые данные.")
-    print("Если хотите оставить прежнее значение, нажмите Enter.")
+    print("Для сохранения прежнего значения нажмите Enter.")
 
     # Изменение суммы
     amount_input = input(
@@ -190,17 +352,19 @@ def edit_expense():
     else:
         amount = expense.amount
 
-    if amount <= 0:
-        raise ServiceError("Сумма расхода должна быть положительной.")
+    # Изменение пользователя доступно только администратору
+    if current_user.role == "admin":
+        user_input = input(
+            f"Новый ID пользователя [{expense.user_id}]: "
+        ).strip()
 
-    # Изменение пользователя
-    user_input = input(
-        f"Новый ID пользователя [{expense.user_id}]: "
-    ).strip()
-
-    user_id = int(user_input) if user_input else expense.user_id
+        user_id = int(user_input) if user_input else expense.user_id
+    else:
+        user_id = current_user.user_id
 
     # Изменение категории
+    show_categories()
+
     category_input = input(
         f"Новый ID категории [{expense.category_id}]: "
     ).strip()
@@ -231,16 +395,22 @@ def edit_expense():
     print("\nРасход успешно изменён.")
 
 
-
 # Удаление расхода
-def delete_expense():
-    print("\n--- УДАЛЕНИЕ РАСХОДА ---")
+def delete_expense(current_user):
+    print("\n=================")
+    print("УДАЛЕНИЕ РАСХОДА")
+    print("=================\n")
 
-    show_expenses()
+    if current_user.role == "admin":
+        show_expenses()
+    else:
+        show_expenses(
+            expense_service.get_user_expenses(current_user.user_id)
+        )
 
     expense_id = input_int("\nВведите ID расхода: ")
 
-    expense_service.get_expense(expense_id)
+    get_accessible_expense(expense_id, current_user)
 
     confirmation = input(
         "Вы действительно хотите удалить расход? (да/нет): "
@@ -254,42 +424,54 @@ def delete_expense():
 
 
 # Меню расходов
-def expense_menu():
+def expense_menu(current_user):
     while True:
         print("""
-========== РАСХОДЫ ==========
-1. Просмотреть все расходы
+=======================
+        РАСХОДЫ
+=======================
+1. Просмотреть расходы
 2. Добавить расход
 3. Изменить расход
-4. Удалить расход
-5. Показать расходы пользователя
+4. Удалить расход""")
+
+        if current_user.role == "admin":
+            print("""5. Показать расходы пользователя
 6. Показать расходы по категории
-0. Назад
-=============================
+
+0. Выход
+=======================
 """)
+
 
         choice = input("Выберите действие: ").strip()
 
         try:
             if choice == "1":
-                show_expenses()
+                if current_user.role == "admin":
+                    show_expenses()
+                else:
+                    expenses = expense_service.get_user_expenses(
+                        current_user.user_id
+                    )
+                    show_expenses(expenses)
 
             elif choice == "2":
-                add_expense()
+                add_expense(current_user)
 
             elif choice == "3":
-                edit_expense()
+                edit_expense(current_user)
 
             elif choice == "4":
-                delete_expense()
+                delete_expense(current_user)
 
-            elif choice == "5":
+            elif choice == "5" and current_user.role == "admin":
                 show_users()
                 user_id = input_int("\nВведите ID пользователя: ")
                 expenses = expense_service.get_user_expenses(user_id)
                 show_expenses(expenses)
 
-            elif choice == "6":
+            elif choice == "6" and current_user.role == "admin":
                 show_categories()
                 category_id = input_int("\nВведите ID категории: ")
                 expenses = expense_service.get_category_expenses(category_id)
@@ -299,15 +481,41 @@ def expense_menu():
                 break
 
             else:
-                print("Неизвестная команда.")
+                print("\nОшибка: Неизвестная команда.")
 
         except (ServiceError, ValueError) as error:
-            print(f"\nОшибка: {error}")
+            print(f"\nОшибка: {error}\n")
+
+
+# ==========================================
+# КАТЕГОРИИ
+# ==========================================
+
+# Вывод списка категорий
+def show_categories():
+    categories = category_service.get_all_categories()
+
+    if not categories:
+        print("\nОшибка: Категории отсутствуют.")
+        return
+    print("\n================")
+    print("СПИСОК КАТЕГОРИЙ")
+    print("================\n")
+
+
+    for category in categories:
+        print(
+            f"ID: {category.category_id} | "
+            f"{category.category_name} | "
+            f"{category.description or 'Описание отсутствует'}"
+        )
 
 
 # Добавление категории
 def add_category():
-    print("\n--- ДОБАВЛЕНИЕ КАТЕГОРИИ ---")
+    print("\n====================")
+    print("ДОБАВЛЕНИЕ КАТЕГОРИИ") 
+    print("====================\n")
 
     name = input("Введите название категории: ").strip()
     description = input("Введите описание категории: ").strip()
@@ -325,7 +533,9 @@ def add_category():
 
 # Изменение категории
 def edit_category():
-    print("\n--- ИЗМЕНЕНИЕ КАТЕГОРИИ ---")
+    print("\n===================")
+    print("ИЗМЕНЕНИЕ КАТЕГОРИИ")
+    print("===================\n")
 
     show_categories()
 
@@ -353,7 +563,9 @@ def edit_category():
 
 # Удаление категории
 def delete_category():
-    print("\n--- УДАЛЕНИЕ КАТЕГОРИИ ---")
+    print("\n==================")
+    print("УДАЛЕНИЕ КАТЕГОРИИ")
+    print("==================\n")
 
     show_categories()
 
@@ -376,14 +588,17 @@ def delete_category():
 def category_menu():
     while True:
         print("""
-========== КАТЕГОРИИ ==========
+=========================
+        КАТЕГОРИИ
+=========================
 1. Просмотреть категории
 2. Добавить категорию
 3. Изменить категорию
 4. Удалить категорию
+
 0. Назад
-===============================
-""")
+=========================
+        """)
 
         choice = input("Выберите действие: ").strip()
 
@@ -404,49 +619,184 @@ def category_menu():
                 break
 
             else:
-                print("Неизвестная команда.")
+                print("\nОшибка: Неизвестная команда.")
 
         except (ServiceError, ValueError) as error:
             print(f"\nОшибка: {error}")
 
 
-# Главное меню
-def main_menu():
+# ==========================================
+# МЕНЮ АДМИНИСТРАТОРА
+# ==========================================
+
+def admin_menu(current_user):
     while True:
-        print("""
-====================================
-       УЧЁТ РАСХОДОВ СЕМЕЙНОГО БЮДЖЕТА
-====================================
+        print(f"""
+=============================
+     МЕНЮ АДМИНИСТРАТОРА
+=============================
+ID: {current_user.user_id}
+Пользователь: {current_user.username}
+ФИО: {current_user.last_name} {current_user.first_name} {current_user.middle_name}
+-----------------------------
 1. Управление расходами
 2. Управление категориями
-3. Просмотр пользователей
-0. Выход
-====================================
-""")
+3. Управление пользователями
+
+0. Выйти из аккаунта
+=============================
+            """)
 
         choice = input("Выберите действие: ").strip()
 
         try:
             if choice == "1":
-                expense_menu()
+                expense_menu(current_user)
 
             elif choice == "2":
                 category_menu()
 
             elif choice == "3":
-                show_users()
+                user_menu()
 
             elif choice == "0":
-                print("\nЗавершение работы программы.")
+                print("\nВыход из аккаунта.")
                 break
 
             else:
-                print("\nНеизвестная команда.")
+                print("\nОшибка: Неизвестная команда.")
+
+        except (ServiceError, ValueError) as error:
+            print(f"\nОшибка: {error}\n")
+
+
+# ==========================================
+# МЕНЮ ОБЫЧНОГО ПОЛЬЗОВАТЕЛЯ
+# ==========================================
+
+def show_project_description():
+    print("\n"+"="*56)
+    print("          Учёт расходов семейного бюджета")
+    print("="*56)
+
+    print("""
+Программа предназначена для ведения и анализа расходов семейного бюджета.
+
+Основные возможности программы:
+
+1. Регистрация новых пользователей.
+2. Авторизация пользователей с проверкой логина и пароля.
+3. Разграничение прав доступа администратора и обычного пользователя.
+4. Добавление, просмотр, редактирование и удаление расходов.
+5. Использование заранее подготовленных категорий расходов.
+6. Управление категориями расходов.
+7. Просмотр расходов по пользователям и категориям.
+
+Для хранения информации используется база данных SQLite.
+
+В системе предусмотрены две роли:
+- Администратор — управление пользователями, категориями и расходами.
+- Пользователь — управление собственными расходами.
+
+Цель проекта — упростить учёт семейных расходов,
+обеспечить хранение информации и помочь контролировать бюджет.
+""")
+    print("="*56)
+  
+    input("\nНажмите Enter, чтобы вернуться в главное меню")
+
+def regular_user_menu(current_user):
+    while True:
+        print(f"""
+===============================
+       МЕНЮ ПОЛЬЗОВАТЕЛЯ
+===============================
+ID: {current_user.user_id}
+Пользователь: {current_user.username}
+ФИО: {current_user.last_name} {current_user.first_name} {current_user.middle_name}
+--------------------------------
+1. Управление своими расходами
+
+0. Выйти из аккаунта
+===============================
+        """)
+
+        choice = input("Выберите действие: ").strip()
+
+        try:
+            if choice == "1":
+                expense_menu(current_user)
+
+            elif choice == "0":
+                print("\nВыход из аккаунта.")
+                break
+
+            else:
+                print("\nОшибка: Неизвестная команда.")
 
         except (ServiceError, ValueError) as error:
             print(f"\nОшибка: {error}")
 
 
-# Запуск программы
+# ==========================================
+# ГЛАВНОЕ МЕНЮ
+# ==========================================
+
+def main_menu():
+
+    # Если пользователей нет, создаём первого администратора
+    if not user_service.get_all_users():
+        create_initial_admin()
+
+    while True:
+        print("""
+=======================================
+    Учёт расходов семейного бюджета
+=======================================
+             Главное меню
+---------------------------------------
+1. Войти в систему
+2. Описание проекта
+
+0. Выход
+=======================================
+            """)
+
+        choice = input("Выберите действие: ").strip()
+
+        if choice == "1":
+            try:
+                current_user = login()
+
+                if current_user is None:
+                    continue
+
+                if current_user.role == "admin":
+                    admin_menu(current_user)
+
+                elif current_user.role == "user":
+                    regular_user_menu(current_user)
+
+                else:
+                    print("\nОшибка: Неизвестная системная роль пользователя.")
+
+            except (ServiceError, ValueError) as error:
+                print(f"\nОшибка: {error}")
+
+        elif choice == "2":
+            show_project_description()
+
+        elif choice == "0":
+            print("\nЗавершение работы программы.")
+            break
+
+        else:
+            print("\nОшибка: Неизвестная команда.")
+
+
+# ==========================================
+# ЗАПУСК ПРОГРАММЫ
+# ==========================================
+
 if __name__ == "__main__":
     main_menu()

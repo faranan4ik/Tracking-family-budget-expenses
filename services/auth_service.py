@@ -4,7 +4,7 @@ import hmac
 import secrets
 
 from models import User
-from user_service import UserService
+from services.user_service import UserService
 from exceptions import ServiceError
 
 
@@ -32,6 +32,30 @@ class AuthService:
             f"pbkdf2_sha256${ITERATIONS}$"
             f"{salt.hex()}${password_hash.hex()}"
         )
+    
+    # Создание первого администратора
+    def create_initial_admin(
+    self, username, password, last_name, first_name, middle_name, family_role
+    ) -> User:
+        if self.user_service.get_all_users():
+            raise ServiceError("Первый администратор уже создан.")
+
+        if not password or len(password) < 8:
+            raise ServiceError("Пароль должен содержать не менее 8 символов.")
+
+        user = User(
+            user_id=None,
+            username=username,
+            password_hash=self.hash_password(password),
+            last_name=last_name,
+            first_name=first_name,
+            middle_name=middle_name,
+            family_role=family_role,
+            role="admin"
+        )
+
+        return self.user_service.add_user(user)
+
 
     # Проверка пароля
     @staticmethod
